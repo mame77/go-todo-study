@@ -65,3 +65,93 @@ Goバックエンドのアーキテクチャについては、今回の開発が
 * Node.js および npm (Reactフロントエンド用)
 
 ### プロジェクトのクローン
+
+```
+git clone https://github.com/mame77/go-todo-study.git
+cd go-todo-study/backend
+```
+
+### バックエンドのセットアップ
+
+1. **Goモジュールのダウンロード**:
+    
+    ```
+    go mod tidy
+    ```
+    
+2. **`.env` ファイルの作成**: プロジェクトのルートディレクトリに `.env` ファイルを作成し、以下の内容を記述してください。
+    
+    ```
+    # MySQLデータベース接続情報 (Docker Composeと同期)
+    MYSQL_USER=myuser
+    MYSQL_PASSWORD=pword
+    MYSQL_DATABASE=Todo
+    TODO_HTTP_PORT=7777 # Goアプリケーションがリッスンするポート
+    
+    # Google OAuth クライアント情報 (Google Cloud Consoleで取得)
+    GOOGLE_CLIENT_ID=YOUR_GOOGLE_CLIENT_ID
+    GOOGLE_CLIENT_SECRET=YOUR_GOOGLE_CLIENT_SECRET
+    GOOGLE_REDIRECT_URI=http://localhost:7777/api/auth/google/callback # あなたのバックエンドのコールバックURL
+    ```
+    
+    **注意**: `YOUR_GOOGLE_CLIENT_ID` と `YOUR_GOOGLE_CLIENT_SECRET` は、Google Cloud Consoleで取得した実際の値に置き換えてください。
+    
+3. **Docker Composeでデータベースを起動**: `backend` ディレクトリで以下のコマンドを実行します。
+    
+    ```
+    docker-compose up -d
+    ```
+    
+    これにより、MySQLコンテナがバックグラウンドで起動します。
+    
+4. **データベースマイグレーションの実行**: `golang-migrate` ツールをインストールしていることを確認し、マイグレーションを適用します。
+    
+    ```
+    # golang-migrateツールがPATHに含まれていない場合
+    # go install -tags 'mysql' github.com/golang-migrate/migrate/v4/cmd/migrate@latest
+    # export PATH=$PATH:$(go env GOPATH)/bin # PATHに追加 (一度だけ実行)
+    
+    migrate -path migrations -database "mysql://${MYSQL_USER}:${MYSQL_PASSWORD}@tcp(localhost:${TODO_HTTP_PORT})/Todo?parseTime=true" up
+    ```
+    
+    **注意**: 上記の`MYSQL_USER`や`MYSQL_PASSWORD`などは、`.env`ファイルに設定した値に合わせてください。また、`TODO_HTTP_PORT`はDocker Composeの`ports`設定と一致させてください。
+    
+
+### フロントエンドのセットアップ (準備中)
+
+Reactフロントエンドは現在開発中ですが、基本的なセットアップは以下のようになる予定です。
+
+1. `frontend` ディレクトリに移動:
+    
+    ```
+    cd ../frontend # バックエンドディレクトリから移動する場合
+    ```
+    
+2. 依存関係のインストール:
+    
+    ```
+    npm install
+    ```
+    
+
+## 実行方法
+
+### バックエンドの実行
+
+`backend` ディレクトリで以下のコマンドを実行します。
+
+```
+go run ./cmd/api/
+```
+
+サーバーが起動し、`http://localhost:7777` でアクセスできるようになります。
+
+### フロントエンドの実行 (準備中)
+
+`frontend` ディレクトリで以下のコマンドを実行します。
+
+```
+npm start
+```
+
+これにより、開発サーバーが起動し、ブラウザでアプリケーションにアクセスできるようになります。
