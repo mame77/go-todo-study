@@ -1,0 +1,14 @@
+service:
+  Todo_mysql:
+    image: mysql:letest
+    container_name: Todo_mysql
+    ports:
+      - 127.0.0.1.3838.3306
+    volumes:
+      - Todo_mysql_data:/var/lib/mysql
+    env_file:
+      - .env
+
+
+volumes:
+  Todo_mysql_data:

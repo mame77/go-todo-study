@@ -1,0 +1,4 @@
+development:
+  dialect: mysql
+  datasource: "myuser:pword@tcp(localhost:3838)/Todo?parseTime=true"
+  dir: migrations
