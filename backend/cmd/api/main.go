@@ -24,9 +24,9 @@ func main() {
 	e.Logger.Fatal(e.Start(":" + port))
 
 	//apiのやつやけど正味よくわからん
-	api := e.Group("/api")
+	//	api := e.Group("/api")
 
 	//handlerめっちゃまとめてるやつ
-	handlerSets := InitHandlerSets()
+	//	handlerSets := InitHandlerSets()
 
 }
