@@ -1,15 +1,18 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import StartPage from '@/pages/start/page';
-export default function App() {
-  return (
-    <BrowserRouter>
-      <Routes>
-        {/* ✅ / にアクセスされたら /start にリダイレクト */}
-        <Route path="/" element={<Navigate to="/start" replace />} />
+import { Routes, Route } from 'react-router-dom'
+import { AuthProvider } from '@/features/auth/AuthProvider'
+import LoginPage from '@/pages/login/LoginPage'
+import TodoPage from '@/pages/todo/TodoPage'
 
-        {/* ✅ /start ページ */}
-        <Route path="/start" element={<StartPage />} />
+function App() {
+  return (
+    <AuthProvider>
+      <Routes>
+        <Route path="/" element={<LoginPage />} />
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/todo" element={<TodoPage />} />
       </Routes>
-    </BrowserRouter>
-  );
+    </AuthProvider>
+  )
 }
+
+export default App

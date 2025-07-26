@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modern Todo App</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="../src/scripts/utils.js"></script>
+    <script src="../src/scripts/auth.js"></script>
+    <script src="../src/scripts/todo.js"></script>
+    <link rel="stylesheet" href="../src/styles/shared.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <!-- Header -->
+        <div class="text-center mb-12">
+            <div class="flex items-center justify-between mb-6">
+                <div class="flex items-center gap-3">
+                    <div id="userAvatar" class="w-10 h-10 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center text-white font-semibold text-sm hidden">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <div id="userInfo" class="text-left hidden">
+                        <div id="userName" class="text-white font-semibold"></div>
+                        <div id="userEmail" class="text-gray-400 text-sm"></div>
+                    </div>
+                </div>
+                <button id="logoutBtn" class="px-4 py-2 bg-red-500/20 hover:bg-red-500/30 text-red-400 hover:text-red-300 rounded-lg border border-red-500/30 transition-all duration-300 hidden">
+                    <i class="fas fa-sign-out-alt mr-2"></i>ログアウト
+                </button>
+            </div>
+            <h1 class="text-5xl font-bold text-white mb-4 animate-bounce-in">
+                <i class="fas fa-rocket mr-3 text-yellow-400"></i>
+                Modern Todo
+            </h1>
+            <p class="text-xl text-gray-300">効率的にタスクを管理しよう</p>
+        </div>
+
+        <!-- Todo App Container -->
+        <div class="max-w-2xl mx-auto">
+            <!-- Add Todo Section -->
+            <div class="bg-white/10 backdrop-blur-lg rounded-2xl p-6 mb-8 shadow-2xl border border-white/20">
+                <div class="flex gap-3">
+                    <input 
+                        type="text" 
+                        id="todoInput" 
+                        placeholder="新しいタスクを入力..." 
+                        class="flex-1 px-4 py-3 rounded-xl bg-white/20 text-white placeholder-gray-300 border border-white/30 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-transparent transition-all duration-300"
+                    >
+                    <button 
+                        id="addBtn" 
+                        class="px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold rounded-xl hover:from-purple-600 hover:to-pink-600 transform hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-xl"
+                    >
+                        <i class="fas fa-plus mr-2"></i>追加
+                    </button>
+                </div>
+            </div>
+
+            <!-- Filter Buttons -->
+            <div class="flex justify-center gap-2 mb-6">
+                <button class="filter-btn active px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300" data-filter="all">
+                    すべて
+                </button>
+                <button class="filter-btn px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300" data-filter="pending">
+                    未完了
+                </button>
+                <button class="filter-btn px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300" data-filter="completed">
+                    完了済み
+                </button>
+            </div>
+
+            <!-- Todo List -->
+            <div class="bg-white/10 backdrop-blur-lg rounded-2xl p-6 shadow-2xl border border-white/20 min-h-[400px]">
+                <div id="todoList" class="space-y-3">
+                    <!-- Todos will be inserted here -->
+                </div>
+                
+                <!-- Empty State -->
+                <div id="emptyState" class="text-center py-12 text-gray-400">
+                    <i class="fas fa-clipboard-list text-6xl mb-4 opacity-50"></i>
+                    <p class="text-xl">タスクがありません</p>
+                    <p class="text-sm">新しいタスクを追加して始めましょう！</p>
+                </div>
+            </div>
+
+            <!-- Stats -->
+            <div class="mt-8 grid grid-cols-3 gap-4">
+                <div class="bg-white/10 backdrop-blur-lg rounded-xl p-4 text-center border border-white/20">
+                    <div class="text-2xl font-bold text-white" id="totalCount">0</div>
+                    <div class="text-sm text-gray-300">合計</div>
+                </div>
+                <div class="bg-white/10 backdrop-blur-lg rounded-xl p-4 text-center border border-white/20">
+                    <div class="text-2xl font-bold text-yellow-400" id="pendingCount">0</div>
+                    <div class="text-sm text-gray-300">未完了</div>
+                </div>
+                <div class="bg-white/10 backdrop-blur-lg rounded-xl p-4 text-center border border-white/20">
+                    <div class="text-2xl font-bold text-green-400" id="completedCount">0</div>
+                    <div class="text-sm text-gray-300">完了済み</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class TodoApp {
+            constructor() {
+                this.todos = JSON.parse(localStorage.getItem('todos')) || [];
+                this.currentFilter = 'all';
+                this.init();
+            }
+
+            init() {
+                this.checkAuth();
+                this.bindEvents();
+                this.render();
+                this.updateStats();
+            }
+
+            checkAuth() {
+                const isAuthenticated = localStorage.getItem('isAuthenticated');
+                if (isAuthenticated !== 'true') {
+                    window.location.href = 'login.html';
+                    return;
+                }
+
+                const user = JSON.parse(localStorage.getItem('user') || '{}');
+                if (user.name) {
+                    this.displayUserInfo(user);
+                }
+            }
+
+            displayUserInfo(user) {
+                const userAvatar = document.getElementById('userAvatar');
+                const userInfo = document.getElementById('userInfo');
+                const userName = document.getElementById('userName');
+                const userEmail = document.getElementById('userEmail');
+                const logoutBtn = document.getElementById('logoutBtn');
+
+                if (user.avatar) {
+                    userAvatar.innerHTML = `<img src="${user.avatar}" alt="${user.name}" class="w-full h-full rounded-full object-cover">`;
+                } else {
+                    userAvatar.innerHTML = `<span>${user.name.charAt(0).toUpperCase()}</span>`;
+                }
+
+                userName.textContent = user.name;
+                userEmail.textContent = user.email;
+
+                userAvatar.classList.remove('hidden');
+                userInfo.classList.remove('hidden');
+                logoutBtn.classList.remove('hidden');
+            }
+
+            bindEvents() {
+                const addBtn = document.getElementById('addBtn');
+                const todoInput = document.getElementById('todoInput');
+                const filterBtns = document.querySelectorAll('.filter-btn');
+                const logoutBtn = document.getElementById('logoutBtn');
+
+                addBtn.addEventListener('click', () => this.addTodo());
+                todoInput.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') this.addTodo();
+                });
+
+                filterBtns.forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        this.setFilter(e.target.dataset.filter);
+                    });
+                });
+
+                logoutBtn.addEventListener('click', () => this.logout());
+            }
+
+            logout() {
+                localStorage.removeItem('isAuthenticated');
+                localStorage.removeItem('user');
+                localStorage.removeItem('oauth_state');
+                this.showNotification('ログアウトしました', 'info');
+                setTimeout(() => {
+                    window.location.href = 'login.html';
+                }, 1000);
+            }
+
+            addTodo() {
+                const input = document.getElementById('todoInput');
+                const text = input.value.trim();
+                
+                if (text) {
+                    const todo = {
+                        id: Date.now(),
+                        text: text,
+                        completed: false,
+                        createdAt: new Date().toISOString()
+                    };
+                    
+                    this.todos.unshift(todo);
+                    this.saveTodos();
+                    this.render();
+                    this.updateStats();
+                    input.value = '';
+                    
+                    // Add success animation
+                    this.showNotification('タスクが追加されました！', 'success');
+                }
+            }
+
+            toggleTodo(id) {
+                const todo = this.todos.find(t => t.id === id);
+                if (todo) {
+                    todo.completed = !todo.completed;
+                    this.saveTodos();
+                    this.render();
+                    this.updateStats();
+                    
+                    const message = todo.completed ? 'タスクが完了しました！' : 'タスクが未完了に戻りました';
+                    this.showNotification(message, todo.completed ? 'success' : 'info');
+                }
+            }
+
+            deleteTodo(id) {
+                this.todos = this.todos.filter(t => t.id !== id);
+                this.saveTodos();
+                this.render();
+                this.updateStats();
+                this.showNotification('タスクが削除されました', 'error');
+            }
+
+            setFilter(filter) {
+                this.currentFilter = filter;
+                
+                // Update active filter button
+                document.querySelectorAll('.filter-btn').forEach(btn => {
+                    btn.classList.remove('active');
+                    if (btn.dataset.filter === filter) {
+                        btn.classList.add('active');
+                    }
+                });
+                
+                this.render();
+            }
+
+            getFilteredTodos() {
+                switch (this.currentFilter) {
+                    case 'pending':
+                        return this.todos.filter(t => !t.completed);
+                    case 'completed':
+                        return this.todos.filter(t => t.completed);
+                    default:
+                        return this.todos;
+                }
+            }
+
+            render() {
+                const todoList = document.getElementById('todoList');
+                const emptyState = document.getElementById('emptyState');
+                const filteredTodos = this.getFilteredTodos();
+
+                if (filteredTodos.length === 0) {
+                    todoList.innerHTML = '';
+                    emptyState.style.display = 'block';
+                    return;
+                }
+
+                emptyState.style.display = 'none';
+                
+                todoList.innerHTML = filteredTodos.map(todo => `
+                    <div class="todo-item flex items-center gap-3 p-4 bg-white/10 rounded-xl border border-white/20 hover:bg-white/20 transition-all duration-300 animate-slide-in ${todo.completed ? 'opacity-75' : ''}">
+                        <button 
+                            onclick="todoApp.toggleTodo(${todo.id})" 
+                            class="flex-shrink-0 w-6 h-6 rounded-full border-2 ${todo.completed ? 'bg-green-500 border-green-500' : 'border-gray-400 hover:border-green-400'} transition-all duration-300 flex items-center justify-center"
+                        >
+                            ${todo.completed ? '<i class="fas fa-check text-white text-xs"></i>' : ''}
+                        </button>
+                        
+                        <span class="flex-1 text-white ${todo.completed ? 'line-through text-gray-400' : ''} transition-all duration-300">
+                            ${todo.text}
+                        </span>
+                        
+                        <button 
+                            onclick="todoApp.deleteTodo(${todo.id})" 
+                            class="flex-shrink-0 w-8 h-8 text-red-400 hover:text-red-300 hover:bg-red-500/20 rounded-lg transition-all duration-300 flex items-center justify-center"
+                        >
+                            <i class="fas fa-trash text-sm"></i>
+                        </button>
+                    </div>
+                `).join('');
+            }
+
+            updateStats() {
+                const total = this.todos.length;
+                const completed = this.todos.filter(t => t.completed).length;
+                const pending = total - completed;
+
+                document.getElementById('totalCount').textContent = total;
+                document.getElementById('completedCount').textContent = completed;
+                document.getElementById('pendingCount').textContent = pending;
+            }
+
+            showNotification(message, type = 'info') {
+                const notification = document.createElement('div');
+                const colors = {
+                    success: 'bg-green-500',
+                    error: 'bg-red-500',
+                    info: 'bg-blue-500'
+                };
+                
+                notification.className = `fixed top-4 right-4 ${colors[type]} text-white px-6 py-3 rounded-lg shadow-lg z-50 animate-slide-in`;
+                notification.textContent = message;
+                
+                document.body.appendChild(notification);
+                
+                setTimeout(() => {
+                    notification.remove();
+                }, 3000);
+            }
+
+            saveTodos() {
+                localStorage.setItem('todos', JSON.stringify(this.todos));
+            }
+        }
+
+        // Initialize app
+        let todoApp;
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            todoApp = new TodoApp();
+            window.todoApp = todoApp; // Make globally accessible
+        });
+    </script>
+</body>
+</html>
