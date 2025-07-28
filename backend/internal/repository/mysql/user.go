@@ -11,11 +11,11 @@ import (
 	"github.com/mame77/go-todo-study/internal/port"
 )
 
-type MySqlRepository struct {
+type MySqlUserRepository struct {
 	db *sqlx.DB
 }
 
-func NewMySqlRepository(db *sqlx.DB) port.UserRepository {
+func NewMySqlUserRepository(db *sqlx.DB) port.UserRepository {
 	if db == nil {
 		panic("nil MySQL DB")
 	}
@@ -35,28 +35,28 @@ type UserAndGoogleIdDBModel struct {
 
 // ユーザーを新規作成する
 func (r *MySqlUserRepository) Create(user *entity.User) error {
-	return RunInTx(r.db, func(tx *sqlx.Txc) error {
+	return RunInTx(r.db, func(tx *sqlx.Tx) error {
 		sql := `
 		INSERT INTO users(id,name,email,created_at,updated_at)
 		VALUES(:id,:name,:email,:created_at,:updated_at)
 		`
 
 		userId := user.Id()
-		_, err := tx.NameExec(sql, map[string]any{
+		_, err := tx.NamedExec(sql, map[string]any{
 			"id":         userId[:],
 			"name":       user.Name(),
 			"email":      user.Email(),
 			"created_at": user.CreatedAt(),
-			"updated_at": user.UpdatedAt,
+			"updated_at": user.UpdatedAt(),
 		})
 		if err != nil {
 			return err
 		}
 		sql = `
 		INSERT INTO google_ids(user_id,google_id)
-		VALUES(userId,:googleId)
+		VALUES(:userId,:googleId)
 		`
-		_, err = tx.NameExec(sql, map[string]any{
+		_, err = tx.NamedExec(sql, map[string]any{
 			"userId":   userId[:],
 			"googleId": user.GoogleId(),
 		})
@@ -68,15 +68,15 @@ func (r *MySqlUserRepository) Create(user *entity.User) error {
 func (r *MySqlUserRepository) FindById(id uuid.UUID) (*entity.User, error) {
 	sql := `
 	SELECT
-			user.id,user.name,user.email,user.created_at,user.updated_at,google_ids.google_id
-	FROM uses
+			users.id,users.name,users.email,users.created_at,users.updated_at,google_ids.google_id
+	FROM users
 			JOIN google_ids
 			ON users.id = google_ids.user_id
 	WHERE
-	user.id = :id
+	users.id = :id
 	`
 	model := UserAndGoogleIdDBModel{}
-	row, err := r.db.NameQuery(sql, map[string]any{
+	row, err := r.db.NamedQuery(sql, map[string]any{
 		"id": id[:],
 	})
 	if err != nil {
@@ -90,7 +90,7 @@ func (r *MySqlUserRepository) FindById(id uuid.UUID) (*entity.User, error) {
 	if err != nil {
 		fmt.Printf("columns err: %s\n", err.Error())
 	} else {
-		fmt.Println(columns)
+		fmt.Println("columns")
 	}
 	err = row.StructScan(&model)
 	if err != nil {
@@ -104,14 +104,15 @@ func (r *MySqlUserRepository) FindById(id uuid.UUID) (*entity.User, error) {
 func (r *MySqlUserRepository) FindByGoogleId(googleId string) (*entity.User, error) {
 	sql := `
 	SELECT
-		users.id,users.name,users,email,users.created_at,users.updated_at,google_ids.google_id
-	FORM users
+		users.id,users.name,users.email,users.created_at,users.updated_at,google_ids.google_id
+	FROM users
 		JOIN google_ids
 		ON users.id = google_ids.user_id
 	WHERE
-		googleids.google_id = :googleId
+		google_ids.google_id = :googleId
 	`
 	model := UserAndGoogleIdDBModel{}
+
 	row, err := r.db.NamedQuery(sql, map[string]any{
 		"googleId": googleId,
 	})
