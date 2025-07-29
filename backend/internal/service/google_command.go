@@ -15,7 +15,7 @@ type GoogleCommandService struct {
 	googleRepository port.GoogleRepository
 }
 
-// インスタンスの生成
+// portやサービスが使えるか検証
 func NewGoogleCommandService(
 	userCmdService *UserCommandService,
 	authCmdService *AuthCommandService,
@@ -42,10 +42,12 @@ func NewGoogleCommandService(
 	}
 }
 
+// インプット
 type GoogleOauthLoginCommandInput struct {
 	Code string
 }
 
+// アウトプット
 type GoogleOauthLoginCommandOutput struct {
 	Id           uuid.UUID
 	Name         string
@@ -54,15 +56,13 @@ type GoogleOauthLoginCommandOutput struct {
 	RefreshToken string
 }
 
-//// Oauthでログイン-----------------------------------------------
-
 func (s *GoogleCommandService) OauthLogin(input GoogleOauthLoginCommandInput) (*GoogleOauthLoginCommandOutput, error) {
-	//google認証で情報取得
+	//googleサーバーから情報取得
 	googleUser, err := s.googleRepository.CodeAuthorization(input.Code)
 	if err != nil {
 		return nil, err
 	}
-	//GoogleIdで検索,情報取得
+	//GoogleIdで検索,DBから情報取得
 	user, err := s.userRepository.FindByGoogleId(googleUser.Id())
 	if err != nil {
 

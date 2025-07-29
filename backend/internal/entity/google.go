@@ -10,7 +10,7 @@ var (
 type GoogleUser struct {
 	id    string
 	name  string
-	email Email
+	email Email // ここのEmailの型が大文字でできるのは同じentityそうだからいちいちimportしなくていいのかな
 }
 
 func NewGoogleUser(id, name, email string) (*GoogleUser, error) {
@@ -20,10 +20,11 @@ func NewGoogleUser(id, name, email string) (*GoogleUser, error) {
 	if name == "" {
 		return nil, ErrGoogleUserNameRequired
 	}
-	mail, err := NewEmail(email)
+	mail, err := NewEmail(email) // キターーーNewEmail関数でバリデーションだ!
 	if err != nil {
 		return nil, err
 	}
+	// GoogleUserポインタの場所を戻り値に渡す
 	return &GoogleUser{
 		id:    id,
 		name:  name,
@@ -31,6 +32,7 @@ func NewGoogleUser(id, name, email string) (*GoogleUser, error) {
 	}, nil
 }
 
+// 相変わらずよくわかんない
 func (u *GoogleUser) Id() string {
 	return u.id
 }

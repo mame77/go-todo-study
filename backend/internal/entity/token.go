@@ -24,10 +24,13 @@ type AccessToken struct {
 	expireIn time.Time
 }
 
+// accessTokenのバリデーションチェック
 func NewAccessToken(sub uuid.UUID, token string, expireIn time.Time) (*AccessToken, error) {
+	// tokenが入っているかチェック
 	if token == "" {
 		return nil, ErrTokenRequire
 	}
+	//有効期限チェック
 	if err := isExpired(expireIn); err != nil {
 		return nil, err
 	}
@@ -40,6 +43,7 @@ func NewAccessToken(sub uuid.UUID, token string, expireIn time.Time) (*AccessTok
 
 // アクセストークンを生成
 func GenerateAccessToken(sub uuid.UUID, expireIn time.Time) (*AccessToken, error) {
+	// なんでトークンを作成するのに期限が有効か確認しないといけないの？
 	if err := isExpired(expireIn); err != nil {
 		return nil, err
 	}
@@ -61,11 +65,13 @@ func GenerateAccessToken(sub uuid.UUID, expireIn time.Time) (*AccessToken, error
 
 // トークンをデコードしアクセストークンを取得
 func AccessTokenFromToken(accessToken string) (*AccessToken, error) {
+	// 空のマップを作成
 	claims := jwt.MapClaims{}
-	// トークンデコード
-	_, err := jwt.ParseWithClaims(accessToken, claims, func(t *jwt.Token) (any, error) {
-		return getJwtSecretKey(), nil
-	})
+	// トークンデコード-----ここよくわかんない
+	_, err := jwt.ParseWithClaims(accessToken, claims,
+		func(t *jwt.Token) (any, error) {
+			return getJwtSecretKey(), nil
+		})
 	if err != nil {
 		fmt.Println(err.Error())
 		return nil, err
@@ -85,6 +91,7 @@ func AccessTokenFromToken(accessToken string) (*AccessToken, error) {
 	if err != nil {
 		return nil, err
 	}
+	// 住所にして返す
 	return &AccessToken{
 		sub:      userId,
 		token:    accessToken,
@@ -92,6 +99,7 @@ func AccessTokenFromToken(accessToken string) (*AccessToken, error) {
 	}, nil
 }
 
+// 期限切れチェック
 func (t *AccessToken) IsExpired() error {
 	err := isExpired(t.expireIn)
 	if err != nil {
@@ -100,10 +108,12 @@ func (t *AccessToken) IsExpired() error {
 	return nil
 }
 
+// userId取得
 func (t *AccessToken) Sub() uuid.UUID {
 	return t.sub
 }
 
+// token文字列取得
 func (t *AccessToken) Token() string {
 	return t.token
 }
@@ -115,6 +125,7 @@ type RefreshToken struct {
 	expireIn time.Time
 }
 
+// refreshToken検証
 func NewRefreshToken(id, userId uuid.UUID, token string, expireIn time.Time) (*RefreshToken, error) {
 	if token == "" {
 		return nil, ErrTokenRequire
@@ -141,6 +152,7 @@ func GenerateRefreshToken(sub uuid.UUID, expireIn time.Time) (*RefreshToken, err
 		"tid": tokenId.String(),
 		"exp": expireIn.Unix(),
 	}
+	// token作成
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	signedStr, err := token.SignedString(getJwtSecretKey())
 	if err != nil {
@@ -197,6 +209,7 @@ func RefreshTokenFromToken(refreshToken string) (*RefreshToken, error) {
 	}, nil
 }
 
+// ここからのポインタレシーバよくわからん----------------------------------
 func (t *RefreshToken) IsExpired() error {
 	err := isExpired(t.expireIn)
 	if err != nil {

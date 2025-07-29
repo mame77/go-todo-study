@@ -9,3 +9,5 @@ type GoogleRepository interface {
 	// 認証コードを使いaccsesstokenでユーザー情報を取得
 	CodeAuthorization(code string) (*entity.GoogleUser, error)
 }
+
+// interfaceは絶対に使わないといけない

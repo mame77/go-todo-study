@@ -9,6 +9,8 @@ const (
 	EMAIL_SUFIX = "@st.kobedenshi.ac.jp"
 )
 
+// EMAIL_SUFIXどこで使ってんの？
+
 var (
 	ErrInvalidEmail       = errors.New("invalid email")
 	ErrEmailInvalidDomain = errors.New("invalid email domain")

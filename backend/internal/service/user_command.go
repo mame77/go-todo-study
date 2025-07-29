@@ -14,6 +14,7 @@ type UserCommandService struct {
 	userRepository port.UserRepository
 }
 
+// ユーザーリポジトリチェック
 func NewUserCommandService(userRepository port.UserRepository) *UserCommandService {
 	if userRepository == nil {
 		panic("nil userRepository")
@@ -35,7 +36,7 @@ type UserCreateCommandOutput struct {
 	Email string
 }
 
-// ユーザーを新規作成する
+// ユーザーを新規作成する--苦手なやつだ
 func (s *UserCommandService) CreateUser(cmd UserCreateCommandInput) (*UserCreateCommandOutput, error) {
 
 	// email

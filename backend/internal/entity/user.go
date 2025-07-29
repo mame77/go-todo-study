@@ -16,12 +16,12 @@ var (
 	ErrUserIdRequired        = errors.New("User 'id' is required")
 	ErrUserNameRequired      = errors.New("User 'name' is required")
 	ErrUserGoogleIdRequired  = errors.New("User 'googleId' is required")
-	ErrUserRoleUnknown       = errors.New("User 'role' is unknown")
 	ErrInvalidUserNameLength = errors.New("invalid User 'name' length")
 	ErrUserTimeZero          = errors.New("the time related User is zero")
 	ErrUserInvalidPermission = errors.New("user invalid permission")
 )
 
+// NewUser関数の戻り値の場所、ポインタの場所
 type User struct {
 	id        uuid.UUID
 	name      string
@@ -31,6 +31,7 @@ type User struct {
 	updatedAt time.Time
 }
 
+// バリデーションをかけれる。戻り値はUserのpointer
 func NewUser(id uuid.UUID, name, googleId string, email Email, createdAt, updatedAt time.Time) (*User, error) {
 	if id == uuid.Nil {
 		return nil, ErrUserIdRequired
@@ -57,6 +58,9 @@ func NewUser(id uuid.UUID, name, googleId string, email Email, createdAt, update
 	}, nil
 }
 
+////ここまでは理解した-----------------------------
+
+// レシーバ関数がよくわからない
 func (u *User) Id() uuid.UUID {
 	return u.id
 }

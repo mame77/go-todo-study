@@ -8,14 +8,14 @@ CREATE TABLE `users`(
 
 
 CREATE TABLE `google_ids`(
-    `google_id` VARCHAR(255) PRIMARY KEY COMMENT 'googleユーザーID',
+    `id` VARCHAR(255) PRIMARY KEY COMMENT 'googleユーザーID',
     `user_id` BINARY(16) NOT NULL COMMENT 'ユーザーID',
     FOREIGN KEY (user_id) REFERENCES users(id)
 );
 
 
 CREATE TABLE `github_ids`(
-    `github_id` VARCHAR(255) PRIMARY KEY COMMENT 'githubユーザーID',
+    `id` VARCHAR(255) PRIMARY KEY COMMENT 'githubユーザーID',
     `user_id` BINARY(16) NOT NULL COMMENT 'ユーザーID',
     FOREIGN KEY (user_id) REFERENCES users(id)
 );

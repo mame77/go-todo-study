@@ -24,7 +24,7 @@ func NewMySqlUserRepository(db *sqlx.DB) port.UserRepository {
 	}
 }
 
-type UserAndGoogleIdDBModel struct {
+type UserAndGoogleIdModel struct {
 	Id        []byte    `db:"id"`
 	Name      string    `db:"name"`
 	Email     string    `db:"email"`
@@ -68,14 +68,14 @@ func (r *MySqlUserRepository) Create(user *entity.User) error {
 func (r *MySqlUserRepository) FindById(id uuid.UUID) (*entity.User, error) {
 	sql := `
 	SELECT
-			users.id,users.name,users.email,users.created_at,users.updated_at,google_ids.google_id
+			users.id,users.name,users.email,users.created_at,users.updated_at,google_ids.id
 	FROM users
 			JOIN google_ids
 			ON users.id = google_ids.user_id
 	WHERE
 	users.id = :id
 	`
-	model := UserAndGoogleIdDBModel{}
+	model := UserAndGoogleIdModel{}
 	row, err := r.db.NamedQuery(sql, map[string]any{
 		"id": id[:],
 	})
@@ -104,16 +104,16 @@ func (r *MySqlUserRepository) FindById(id uuid.UUID) (*entity.User, error) {
 func (r *MySqlUserRepository) FindByGoogleId(googleId string) (*entity.User, error) {
 	sql := `
 	SELECT
-		users.id,users.name,users.email,users.created_at,users.updated_at,google_ids.google_id
+		users.id,users.name,users.email,users.created_at,users.updated_at,google_ids.id
 	FROM users
 		JOIN google_ids
 		ON users.id = google_ids.user_id
 	WHERE
-		google_ids.google_id = :googleId
+		google_ids.id = :googleId
 	`
-	model := UserAndGoogleIdDBModel{}
+	model := UserAndGoogleIdModel{}
 
-	row, err := r.db.NamedQuery(sql, map[string]any{
+	_, err := r.db.NamedQuery(sql, map[string]any{
 		"googleId": googleId,
 	})
 	if err != nil {
@@ -124,16 +124,20 @@ func (r *MySqlUserRepository) FindByGoogleId(googleId string) (*entity.User, err
 }
 
 // UserAndGoogleIdDBModelをUserに変換する
-func userAndGoogleIdModelToUser(model *UserAndGoogleIdDBModel) (*entity.User, error) {
+func userAndGoogleIdModelToUser(model *UserAndGoogleIdModel) (*entity.User, error) {
 	id, err := uuid.FromBytes(model.Id)
+	if err != nil {
+		return nil, err
+	}
+	email, err := entity.NewEmail(model.Email)
 	if err != nil {
 		return nil, err
 	}
 	return entity.NewUser(
 		id,
 		model.Name,
-		model.Email,
 		model.GoogleId,
+		email,
 		model.CreatedAt,
 		model.UpdatedAt,
 	)
