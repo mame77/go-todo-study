@@ -15,14 +15,16 @@ import (
 )
 
 const (
-	GOOGLE_OAUTH_TOKEN_URL = "http://oauth2.googleapis.com/token"
-	GOOGLE_USER_API_URL    = "http://www.googleapis.com/oauth2/v3/userinfo"
+	GOOGLE_OAUTH_TOKEN_URL = "https://oauth2.googleapis.com/token"
+	GOOGLE_USER_API_URL    = "https://www.googleapis.com/oauth2/v3/userinfo"
 )
 
+// Google API リポジトリ構造体
 type ApiGoogleRepository struct {
 	client *datasource.GoogleApiClient
 }
 
+// GoogleApiRepository のコンストラクタ
 func NewApiGoogleRepository(client *datasource.GoogleApiClient) port.GoogleRepository {
 	if client == nil {
 		panic("nil GoogleApiClient")
@@ -32,6 +34,7 @@ func NewApiGoogleRepository(client *datasource.GoogleApiClient) port.GoogleRepos
 	}
 }
 
+// Google OAuth API のレスポンス構造体
 type GoogleOauthResponse struct {
 	AccessToken           string `json:"access_token"`
 	ExpiresIn             int    `json:"expires_in"`
@@ -42,10 +45,12 @@ type GoogleOauthResponse struct {
 	IdToken               string `json:"id_token"`
 }
 
+// Google ユーザー情報 API のレスポンス構造体
 type GoogleUserResponse struct {
-	Sub   string `json:"sub"`
-	Name  string `json:"name"`
-	Email string `json:"email"`
+	Sub     string `json:"sub"`
+	Name    string `json:"name"`
+	Email   string `json:"email"`
+	Picture string `json:"picture"`
 }
 
 // Oauthのコードの認証を行う、ユーザーの情報を取得する
@@ -64,7 +69,6 @@ func (r *ApiGoogleRepository) CodeAuthorization(code string) (*entity.GoogleUser
 		return nil, err
 	}
 	defer resp.Body.Close()
-
 	if resp.StatusCode != http.StatusOK {
 		return nil, errors.New("oauth request failed")
 	}
@@ -109,7 +113,7 @@ func (r *ApiGoogleRepository) CodeAuthorization(code string) (*entity.GoogleUser
 		return nil, err
 	}
 	//googleユーザー作成
-	googleUser, err := entity.NewGoogleUser(userResponse.Sub, userResponse.Name, userResponse.Email)
+	googleUser, err := entity.NewGoogleUser(userResponse.Sub, userResponse.Name, userResponse.Email, userResponse.Picture)
 	if err != nil {
 		return nil, err
 	}
@@ -119,7 +123,7 @@ func (r *ApiGoogleRepository) CodeAuthorization(code string) (*entity.GoogleUser
 // ユーザー情報を取得するリクエスト作成
 func (r *ApiGoogleRepository) createUserRequest(accessToken string) (*http.Request, error) {
 	req, err := http.NewRequest(
-		"POST",
+		"GET",
 		GOOGLE_USER_API_URL,
 		nil,
 	)
@@ -130,7 +134,7 @@ func (r *ApiGoogleRepository) createUserRequest(accessToken string) (*http.Reque
 	return req, nil
 }
 
-// Oauth認証を完了するリクエスト作成
+// accesstoken取得目的
 func (r *ApiGoogleRepository) createOauthRequest(code string) (*http.Request, error) {
 	//フォームデータ
 	values := url.Values{}
@@ -144,6 +148,7 @@ func (r *ApiGoogleRepository) createOauthRequest(code string) (*http.Request, er
 	req, err := http.NewRequest(
 		"POST",
 		GOOGLE_OAUTH_TOKEN_URL,
+		// フォームデータをエンコード
 		strings.NewReader(values.Encode()),
 	)
 	if err != nil {

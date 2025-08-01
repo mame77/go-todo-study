@@ -16,6 +16,7 @@ var (
 	ErrUserIdRequired        = errors.New("User 'id' is required")
 	ErrUserNameRequired      = errors.New("User 'name' is required")
 	ErrUserGoogleIdRequired  = errors.New("User 'googleId' is required")
+	ErrUserGithubIdRequired  = errors.New("User 'githubId' is required")
 	ErrInvalidUserNameLength = errors.New("invalid User 'name' length")
 	ErrUserTimeZero          = errors.New("the time related User is zero")
 	ErrUserInvalidPermission = errors.New("user invalid permission")
@@ -27,12 +28,13 @@ type User struct {
 	name      string
 	email     Email
 	google_id string
+	github_id string
 	createdAt time.Time
 	updatedAt time.Time
 }
 
 // バリデーションをかけれる。戻り値はUserのpointer
-func NewUser(id uuid.UUID, name, googleId string, email Email, createdAt, updatedAt time.Time) (*User, error) {
+func NewUser(id uuid.UUID, name string, email Email, googleId, githubId string, createdAt, updatedAt time.Time) (*User, error) {
 	if id == uuid.Nil {
 		return nil, ErrUserIdRequired
 	}
@@ -41,6 +43,9 @@ func NewUser(id uuid.UUID, name, googleId string, email Email, createdAt, update
 	}
 	if googleId == "" {
 		return nil, ErrUserGoogleIdRequired
+	}
+	if githubId == "" {
+		return nil, ErrUserGithubIdRequired
 	}
 	if len(name) < MIN_USER_NAME_LENGTH || len(name) > MAX_USER_NAME_LENGTH {
 		return nil, ErrInvalidUserNameLength
@@ -53,20 +58,22 @@ func NewUser(id uuid.UUID, name, googleId string, email Email, createdAt, update
 		name:      name,
 		email:     email,
 		google_id: googleId,
+		github_id: githubId,
 		createdAt: createdAt,
 		updatedAt: updatedAt,
 	}, nil
 }
 
-////ここまでは理解した-----------------------------
-
-// レシーバ関数がよくわからない
 func (u *User) Id() uuid.UUID {
 	return u.id
 }
 
 func (u *User) GoogleId() string {
 	return u.google_id
+}
+
+func (u *User) GithubId() string {
+	return u.github_id
 }
 
 func (u *User) Name() string {

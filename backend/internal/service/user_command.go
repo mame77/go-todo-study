@@ -26,6 +26,7 @@ func NewUserCommandService(userRepository port.UserRepository) *UserCommandServi
 
 type UserCreateCommandInput struct {
 	GoogleId string
+	GithubId string
 	Name     string
 	Email    string
 }
@@ -53,8 +54,9 @@ func (s *UserCommandService) CreateUser(cmd UserCreateCommandInput) (*UserCreate
 	user, err := entity.NewUser(
 		id,
 		cmd.Name,
-		cmd.GoogleId,
 		email,
+		cmd.GoogleId,
+		cmd.GithubId,
 		time.Now(),
 		time.Now(),
 	)
