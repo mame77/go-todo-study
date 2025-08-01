@@ -14,7 +14,7 @@ const (
 )
 
 type RedisTokenRepository struct {
-	Client *redis.Client
+	client *redis.Client
 }
 
 func NewRedisTokenRepository(client *redis.Client) port.TokenRepository {

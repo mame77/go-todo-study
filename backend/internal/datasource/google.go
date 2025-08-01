@@ -17,7 +17,6 @@ func NewGoogleApiClient() *GoogleApiClient {
 	}
 }
 
-// よくわからん
 func (c *GoogleApiClient) ClientId() string {
 	return c.clientId
 }

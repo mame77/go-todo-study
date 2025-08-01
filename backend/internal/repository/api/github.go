@@ -15,46 +15,43 @@ import (
 )
 
 const (
-	GOOGLE_OAUTH_TOKEN_URL = "https://oauth2.googleapis.com/token"
-	GOOGLE_USER_API_URL    = "https://www.googleapis.com/oauth2/v3/userinfo"
+	GITHUB_OAUTH_TOKEN_URL = "https://github.com/login/oauth/access_token"
+	GITHUB_USER_API_URL    = "https://api.github.com/user"
 )
 
-// Google API リポジトリ構造体
-type ApiGoogleRepository struct {
-	client *datasource.GoogleApiClient
+// GitHub API リポジトリ構造体
+type ApiGithubRepository struct {
+	client *datasource.GithubApiClient
 }
 
-// GoogleApiRepository のコンストラクタ
-func NewApiGoogleRepository(client *datasource.GoogleApiClient) port.GoogleRepository {
+// GithubApiRepository のコンストラクタ
+func NewApiGithubRepository(client *datasource.GithubApiClient) port.GithubRepository {
 	if client == nil {
-		panic("nil GoogleApiClient")
+		panic("nil GithubApiClient")
 	}
-	return &ApiGoogleRepository{
+	return &ApiGithubRepository{
 		client: client,
 	}
 }
 
-// Google OAuth API のレスポンス構造体
-type GoogleOauthResponse struct {
-	AccessToken           string `json:"access_token"`
-	ExpiresIn             int    `json:"expires_in"`
-	RefreshToken          string `json:"refresh_token"`
-	RefreshTokenExpiresIn string `json:"refresh_token_expires_in"`
-	Scope                 string `json:"scope"`
-	TokenType             string `json:"token_type"`
-	IdToken               string `json:"id_token"`
+// GitHub OAuth API のレスポンス構造体
+type GithubOauthResponse struct {
+	AccessToken string `json:"access_token"`
+	Scope       string `json:"scope"`
+	TokenType   string `json:"token_type"`
 }
 
-// Google ユーザー情報 API のレスポンス構造体
-type GoogleUserResponse struct {
-	Sub     string `json:"sub"`
-	Name    string `json:"name"`
-	Email   string `json:"email"`
-	Picture string `json:"picture"`
+// GitHub ユーザー情報 API のレスポンス構造体
+type GithubUserResponse struct {
+	Id        int    `json:"id"`
+	Login     string `json:"login"`
+	Name      string `json:"name"`
+	Email     string `json:"email"`
+	AvatarUrl string `json:"avatar_url"`
 }
 
 // Oauthのコードの認証を行う、ユーザーの情報を取得する
-func (r *ApiGoogleRepository) CodeAuthorization(code string) (*entity.GoogleUser, error) {
+func (r *ApiGithubRepository) CodeAuthorization(code string) (*entity.GithubUser, error) {
 	//リクエスト作成
 	req, err := r.createOauthRequest(code)
 	if err != nil {
@@ -80,7 +77,7 @@ func (r *ApiGoogleRepository) CodeAuthorization(code string) (*entity.GoogleUser
 	}
 
 	//json変換
-	oauthResponse := GoogleOauthResponse{}
+	oauthResponse := GithubOauthResponse{}
 	err = json.Unmarshal(body, &oauthResponse)
 	if err != nil {
 		return nil, err
@@ -107,35 +104,36 @@ func (r *ApiGoogleRepository) CodeAuthorization(code string) (*entity.GoogleUser
 		return nil, err
 	}
 	//json変換
-	userResponse := GoogleUserResponse{}
+	userResponse := GithubUserResponse{}
 	err = json.Unmarshal(body, &userResponse)
 	if err != nil {
 		return nil, err
 	}
-	//googleユーザー作成
-	googleUser, err := entity.NewGoogleUser(userResponse.Sub, userResponse.Name, userResponse.Email, userResponse.Picture)
+	//githubユーザー作成
+	githubUser, err := entity.NewGithubUser(fmt.Sprintf("%d", userResponse.Id), userResponse.Name, userResponse.Email, userResponse.AvatarUrl)
 	if err != nil {
 		return nil, err
 	}
-	return googleUser, nil
+	return githubUser, nil
 }
 
 // ユーザー情報を取得するリクエスト作成
-func (r *ApiGoogleRepository) createUserRequest(accessToken string) (*http.Request, error) {
+func (r *ApiGithubRepository) createUserRequest(accessToken string) (*http.Request, error) {
 	req, err := http.NewRequest(
 		"GET",
-		GOOGLE_USER_API_URL,
+		GITHUB_USER_API_URL,
 		nil,
 	)
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Add("Authorization", "Bearer "+accessToken)
+	req.Header.Add("Authorization", "token "+accessToken)
+	req.Header.Add("Accept", "application/vnd.github.v3+json")
 	return req, nil
 }
 
 // accesstoken取得目的
-func (r *ApiGoogleRepository) createOauthRequest(code string) (*http.Request, error) {
+func (r *ApiGithubRepository) createOauthRequest(code string) (*http.Request, error) {
 	//フォームデータ
 	values := url.Values{}
 	values.Set("code", code)
@@ -147,7 +145,7 @@ func (r *ApiGoogleRepository) createOauthRequest(code string) (*http.Request, er
 	//リクエスト
 	req, err := http.NewRequest(
 		"POST",
-		GOOGLE_OAUTH_TOKEN_URL,
+		GITHUB_OAUTH_TOKEN_URL,
 		// フォームデータをエンコード
 		strings.NewReader(values.Encode()),
 	)
@@ -155,5 +153,6 @@ func (r *ApiGoogleRepository) createOauthRequest(code string) (*http.Request, er
 		return nil, err
 	}
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.Header.Set("Accept", "application/json")
 	return req, nil
 }

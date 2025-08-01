@@ -10,4 +10,5 @@ type UserRepository interface {
 	FindById(uuid.UUID) (*entity.User, error)
 	FindByGoogleId(string) (*entity.User, error)
 	FindByGithubId(string) (*entity.User, error)
+	FindAll(uuid.UUID, uint, uint) ([]*entity.User, error)
 }

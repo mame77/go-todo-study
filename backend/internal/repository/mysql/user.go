@@ -154,6 +154,45 @@ func (r *MySqlUserRepository) FindByGoogleId(googleId string) (*entity.User, err
 	return userAndGoogleIdModelToUser(&model)
 }
 
+// ユーザー一覧を取得する
+func (r *MySqlUserRepository) FindAll(userId uuid.UUID, limit uint, page uint) ([]*entity.User, error) {
+	offset := (page - 1) * limit
+	sql := `
+	SELECT
+		users.id,users.name,users.email,users.created_at,users.updated_at,google_ids.id
+	FROM users
+		JOIN google_ids
+		ON users.id = google_ids.user_id
+	ORDER BY users.created_at DESC
+	LIMIT :limit OFFSET :offset
+	`
+	
+	rows, err := r.db.NamedQuery(sql, map[string]any{
+		"limit":  limit,
+		"offset": offset,
+	})
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	
+	var users []*entity.User
+	for rows.Next() {
+		model := UserAndGoogleIdModel{}
+		err := rows.StructScan(&model)
+		if err != nil {
+			return nil, err
+		}
+		user, err := userAndGoogleIdModelToUser(&model)
+		if err != nil {
+			return nil, err
+		}
+		users = append(users, user)
+	}
+	
+	return users, nil
+}
+
 // UserAndGoogleIdDBModelをUserに変換する
 func userAndGoogleIdModelToUser(model *UserAndGoogleIdModel) (*entity.User, error) {
 	id, err := uuid.FromBytes(model.Id)
