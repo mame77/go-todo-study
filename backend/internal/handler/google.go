@@ -17,6 +17,7 @@ type GoogleHandler struct {
 	googleCmdService *service.GoogleCommandService
 }
 
+// googleCmdServiceを検証
 func NewGoogleHandler(googleCmdService *service.GoogleCommandService) *GoogleHandler {
 	if googleCmdService == nil {
 		panic("nil GoogleCmdService")
@@ -37,15 +38,18 @@ type GoogleLoginResponse struct {
 //// httpをリクエストを受け取ってレスポンスを返す----------------------
 
 func (h *GoogleHandler) Redirect(ctx echo.Context) error {
+	// codeを受け取る
 	if !ctx.QueryParams().Has("code") {
 		return common.NewValidationError(errors.New("code is not set"))
 	}
+
 	output, err := h.googleCmdService.OauthLogin(service.GoogleOauthLoginCommandInput{
 		Code: ctx.QueryParam("code"),
 	})
 	if err != nil {
 		return err
 	}
+
 	return ctx.JSON(http.StatusOK, GoogleLoginResponse{
 		Id:           output.Id.String(),
 		Name:         output.Name,

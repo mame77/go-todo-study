@@ -8,12 +8,11 @@ import (
 
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
-	migrate "github.com/rubenv/sql-migrate"
 )
 
 // MySQL接続
-func GetMySqlConnection() *sqlx.DB {
-	db, err := sqlx.Connect("mysql", getMySqlDSN())
+func GetMySQLConnection() *sqlx.DB {
+	db, err := sqlx.Connect("mysql", getMySQLDSN())
 	if err != nil {
 		panic("faild to connect MySQL database:" + err.Error())
 	}

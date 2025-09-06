@@ -8,20 +8,20 @@ import (
 //// 初期設定-----------------------------------------------------
 
 // 構造体
-type GoogleCommandService struct {
+type GithubCommandService struct {
 	userCmdService   *UserCommandService
 	authCmdService   *AuthCommandService
 	userRepository   port.UserRepository
-	googleRepository port.GoogleRepository
+	githubRepository port.GithubRepository
 }
 
 // portやサービスが使えるか検証
-func NewGoogleCommandService(
+func NewGithubCommandService(
 	userCmdService *UserCommandService,
 	authCmdService *AuthCommandService,
 	userRepository port.UserRepository,
-	googleRepository port.GoogleRepository,
-) *GoogleCommandService {
+	githubRepository port.GithubRepository,
+) *GithubCommandService {
 	if userCmdService == nil {
 		panic("nil UserCommandService")
 	}
@@ -31,24 +31,24 @@ func NewGoogleCommandService(
 	if userRepository == nil {
 		panic("nil UserRepository")
 	}
-	if googleRepository == nil {
+	if githubRepository == nil {
 		panic("nil GoogleRepository")
 	}
-	return &GoogleCommandService{
+	return &GithubCommandService{
 		userCmdService:   userCmdService,
 		authCmdService:   authCmdService,
 		userRepository:   userRepository,
-		googleRepository: googleRepository,
+		githubRepository: githubRepository,
 	}
 }
 
 // インプット
-type GoogleOauthLoginCommandInput struct {
+type GithubOauthLoginCommandInput struct {
 	Code string
 }
 
 // アウトプット
-type GoogleOauthLoginCommandOutput struct {
+type GithubOauthLoginCommandOutput struct {
 	Id           uuid.UUID
 	Name         string
 	Email        string
@@ -56,23 +56,23 @@ type GoogleOauthLoginCommandOutput struct {
 	RefreshToken string
 }
 
-func (s *GoogleCommandService) OauthLogin(input GoogleOauthLoginCommandInput) (*GoogleOauthLoginCommandOutput, error) {
-	//googleサーバーから情報取得
-	googleUser, err := s.googleRepository.CodeAuthorization(input.Code)
+func (s *GithubCommandService) OauthLogin(input GithubOauthLoginCommandInput) (*GithubOauthLoginCommandOutput, error) {
+	//Githubサーバーから情報取得
+	githubUser, err := s.githubRepository.CodeAuthorization(input.Code)
 	if err != nil {
 		return nil, err
 	}
-	//GoogleIdで検索,DBから情報取得
-	user, err := s.userRepository.FindByGoogleId(googleUser.Id())
+	//GithubIdで検索,DBから情報取得
+	user, err := s.userRepository.FindByGithubId(githubUser.Id())
 	if err != nil {
 
 		//// userが存在しない場合--------------------------------------
 
 		// userを作成
 		userOutput, err := s.userCmdService.CreateUser(UserCreateCommandInput{
-			Name:     googleUser.Name(),
-			Email:    googleUser.Email().String(),
-			GoogleId: googleUser.Id(),
+			Name:     githubUser.Name(),
+			Email:    githubUser.Email().String(),
+			GithubId: githubUser.Id(),
 		})
 		if err != nil {
 			return nil, err
@@ -85,7 +85,7 @@ func (s *GoogleCommandService) OauthLogin(input GoogleOauthLoginCommandInput) (*
 			return nil, err
 		}
 		// 出力まとめ
-		return &GoogleOauthLoginCommandOutput{
+		return &GithubOauthLoginCommandOutput{
 			Id:           userOutput.Id,
 			Name:         userOutput.Name,
 			Email:        userOutput.Email,
@@ -104,7 +104,7 @@ func (s *GoogleCommandService) OauthLogin(input GoogleOauthLoginCommandInput) (*
 			return nil, err
 		}
 		// 出力まとめ
-		return &GoogleOauthLoginCommandOutput{
+		return &GithubOauthLoginCommandOutput{
 			Id:           user.Id(),
 			Name:         user.Name(),
 			Email:        user.Email().String(),

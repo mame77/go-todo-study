@@ -18,6 +18,7 @@ var (
 	ErrInvalidToken = errors.New("invalid token")
 )
 
+// portを構造化
 type AuthCommandService struct {
 	userRepository  port.UserRepository
 	tokenRepository port.TokenRepository
@@ -50,13 +51,15 @@ type AuthTokenCommandOutput struct {
 
 // トークンを生成
 func (s *AuthCommandService) GenerateToken(input AuthTokenCommandInput) (*AuthTokenCommandOutput, error) {
+
 	// 期限
 	refreshTokenExp := time.Now().Add(time.Second * time.Duration(REFRESH_TOKEN_EXPIRE))
-	// トークン発行
-	refreshToken, err := entity.GenerateRefreshToken(input.UserId, refreshTokenExp)
+	// リフレッシュトークン発行
+	refreshToken, err := entity.GenerateRefreshToken(input.UserId, refreshTokenExp) // refreshTokenExpどこでつかってる？
 	if err != nil {
 		return nil, err
 	}
+
 	// 期限
 	accessTokenExp := time.Now().Add(time.Second * time.Duration(ACCESS_TOKEN_EXPIRE))
 	// アクセストークン発行
@@ -65,6 +68,7 @@ func (s *AuthCommandService) GenerateToken(input AuthTokenCommandInput) (*AuthTo
 		return nil, err
 	}
 
+	// tokenをDBに保存？
 	err = s.tokenRepository.AddWhitelist(refreshToken)
 	if err != nil {
 		return nil, err
@@ -82,6 +86,8 @@ type TokenRefreshCommandInput struct {
 type TokenRefreshCommandOutput struct {
 	AccessToken string
 }
+
+//// 次ここから--------------------------------------------------
 
 // トークンリフレッシュ
 func (s *AuthCommandService) RefreshToken(input TokenRefreshCommandInput) (*TokenRefreshCommandOutput, error) {

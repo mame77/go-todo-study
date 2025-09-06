@@ -14,6 +14,7 @@ type UserCommandService struct {
 	userRepository port.UserRepository
 }
 
+// ユーザーリポジトリチェック
 func NewUserCommandService(userRepository port.UserRepository) *UserCommandService {
 	if userRepository == nil {
 		panic("nil userRepository")
@@ -25,6 +26,7 @@ func NewUserCommandService(userRepository port.UserRepository) *UserCommandServi
 
 type UserCreateCommandInput struct {
 	GoogleId string
+	GithubId string
 	Name     string
 	Email    string
 }
@@ -35,7 +37,7 @@ type UserCreateCommandOutput struct {
 	Email string
 }
 
-// ユーザーを新規作成する
+// ユーザーを新規作成する--苦手なやつだ
 func (s *UserCommandService) CreateUser(cmd UserCreateCommandInput) (*UserCreateCommandOutput, error) {
 
 	// email
@@ -52,8 +54,9 @@ func (s *UserCommandService) CreateUser(cmd UserCreateCommandInput) (*UserCreate
 	user, err := entity.NewUser(
 		id,
 		cmd.Name,
-		cmd.GoogleId,
 		email,
+		cmd.GoogleId,
+		cmd.GithubId,
 		time.Now(),
 		time.Now(),
 	)
