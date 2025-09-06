@@ -2,9 +2,9 @@ name: Notify Discord
 
 on:
   issues:
-    types: [opened, assigned]           # Issue作成/アサイン変更
+    types: [assigned]           # アサインされた時/変更された時
   pull_request:
-    types: [opened, review_requested, ready_for_review, closed, reopened] # PR作成/レビュー依頼/マージ等
+    types: [review_requested, ready_for_review, closed, reopened] # レビュー依頼/マージ等
   pull_request_review:
     types: [submitted]                   # レビュー到着
 
@@ -69,12 +69,10 @@ jobs:
                 const owner = context.repo.owner;
                 const url = issue.html_url;
 
-                const assignees = (issue.assignees || []).map(a => a.login);
-                if (assignees.length === 0) {
-                  return; // アサイン無しなら何もしない
-                }
+                const added = context.payload.assignee?.login;
+                if (!added) return;
+                const mentions = mentionOf(added);
 
-                const mentions = uniq(assignees).map(mentionOf).join(' ');
                 const title = issue.title;
 
                 const msg = [
